@@ -1,4 +1,3 @@
-"""Leitura read-only das credenciais OAuth do Claude Code (~/.claude/.credentials.json)."""
 from __future__ import annotations
 
 import json
@@ -48,7 +47,6 @@ def read(path: str | None = None) -> Credentials:
 
 
 def is_expired(expires_at_ms: float | None, skew_s: float = 30.0, now: float | None = None) -> bool:
-    """True se o token já expirou (com margem skew_s p/ clock skew)."""
     if expires_at_ms is None:
         return False
     if now is None:

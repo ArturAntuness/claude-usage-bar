@@ -1,4 +1,3 @@
-"""Estado + orquestração do refresh (sem dependência de GTK)."""
 from __future__ import annotations
 
 import time
@@ -24,7 +23,7 @@ class UsageModel:
         prober: Callable[[Credentials], Usage] = probe.fetch,
         now: Callable[[], float] = time.time,
     ) -> None:
-        """Lê credencial, faz o probe, atualiza estado. Nunca levanta — erros vão p/ self.error."""
+
         try:
             c = read_creds()
         except CredentialsError as e:

@@ -1,4 +1,3 @@
-"""Funções puras de formatação/normalização. Sem I/O, sem rede — 100% testável."""
 from __future__ import annotations
 
 import time
@@ -9,7 +8,6 @@ def clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
 
 
 def parse_percent(raw: str | None) -> float:
-    """Normaliza utilização p/ 0…100. Valores <= 1 são tratados como fração."""
     if raw is None:
         return 0.0
     try:
@@ -22,7 +20,6 @@ def parse_percent(raw: str | None) -> float:
 
 
 def reset_text(epoch: float | None, now: float | None = None) -> str:
-    """Countdown legível a partir de epoch unix (s)."""
     if epoch is None:
         return ""
     if now is None:
@@ -41,14 +38,12 @@ def reset_text(epoch: float | None, now: float | None = None) -> str:
 
 
 def bar_unicode(pct: float, cells: int = 7) -> str:
-    """Barra estética: blocos cheios/vazios proporcionais ao %."""
     filled = round(clamp(pct) / 100 * cells)
     filled = max(0, min(cells, filled))
     return "█" * filled + "░" * (cells - filled)
 
 
 def level(pct: float) -> str:
-    """Severidade por limiar: 'ok' <80, 'warn' >=80, 'crit' >=95."""
     if pct >= 95:
         return "crit"
     if pct >= 80:

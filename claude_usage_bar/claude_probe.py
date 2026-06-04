@@ -52,7 +52,6 @@ def _opt_float(raw) -> float | None:
 
 
 def parse_response(status: int, headers: Mapping[str, str]) -> Usage:
-    """Pura: status + headers → Usage, ou levanta ProbeError. Sem rede."""
     if status in (401, 403):
         raise ProbeError("unauthorized", "token expirado — rode 'claude' uma vez")
 
@@ -73,7 +72,6 @@ def parse_response(status: int, headers: Mapping[str, str]) -> Usage:
 
 
 def fetch(creds: Credentials) -> Usage:
-    """Request mínimo (max_tokens:1); corpo ignorado, só os headers importam."""
     body = json.dumps({
         "model": PROBE_MODEL,
         "max_tokens": 1,
@@ -91,7 +89,6 @@ def fetch(creds: Credentials) -> Usage:
         with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
             return parse_response(resp.status, dict(resp.headers.items()))
     except urllib.error.HTTPError as e:
-        # headers de rate-limit vêm mesmo em 4xx → tenta parsear antes de falhar
         hdrs = dict(e.headers.items()) if e.headers else {}
         return parse_response(e.code, hdrs)
     except urllib.error.URLError as e:
