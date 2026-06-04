@@ -4,7 +4,7 @@ Indicador de bandeja (system tray) para **Ubuntu/GNOME** que mostra o uso do seu
 plano **Claude Code** em tempo real: janelas de **5h** e **7d** com countdown de
 reset. Reusa o token que o Claude CLI já guarda — sem dashboard, sem login extra.
 
-- Ícone medidor na barra superior que muda de cor: verde <80%, laranja ≥80%, vermelho ≥95%.
+- Texto fixo na barra (`5h X%  7d Y%`) + anel medidor que muda de cor: verde <80%, laranja ≥80%, vermelho ≥95%.
 - Clique abre o menu com o detalhe: barras, % e horário de reset de cada janela.
 - Atualiza a cada 5 minutos.
 
@@ -20,7 +20,7 @@ reset. Reusa o token que o Claude CLI já guarda — sem dashboard, sem login ex
 ## Instalação
 
 ```bash
-git clone <url-do-repo> claude-usage-bar
+git clone https://github.com/ArturAntuness/claude-usage-bar.git
 cd claude-usage-bar
 ./install.sh
 /usr/bin/python3 ~/.local/share/claude-usage-bar/main.py
