@@ -18,6 +18,7 @@ from .model import UsageModel  # noqa: E402
 
 APP_ID = "claude-usage-bar"
 REFRESH_S = 300
+LABEL_GUIDE = "5h 99%  7d 99%"  # reserva de largura p/ o texto da barra
 
 
 class TrayApp:
@@ -32,6 +33,7 @@ class TrayApp:
         self.indicator.set_icon_theme_path(self._icon_dir)
         self.indicator.set_status(AppIndicator.IndicatorStatus.ACTIVE)
         self._set_icon(None, "idle")
+        self.indicator.set_label("…", LABEL_GUIDE)
         self.indicator.set_menu(self._build_menu())
 
         self.refresh()
@@ -57,6 +59,15 @@ class TrayApp:
             self._set_icon(None, "idle")
         else:
             self._set_icon(worst, level(worst))
+
+    def _label_text(self) -> str:
+        """Texto fixo na barra: as duas janelas, ou estado de erro/carregando."""
+        u = self.model.usage
+        if u:
+            return f"5h {u.five_hour_pct:.0f}%  7d {u.seven_day_pct:.0f}%"
+        if self.model.error:
+            return "⚠"
+        return "…"
 
     # ---- menu ----
     def _build_menu(self) -> Gtk.Menu:
@@ -121,6 +132,7 @@ class TrayApp:
     def _apply(self) -> bool:
         self.model.is_loading = False
         self._update_icon()
+        self.indicator.set_label(self._label_text(), LABEL_GUIDE)
         self._rebuild_menu()
         return False  # idle_add one-shot
 
