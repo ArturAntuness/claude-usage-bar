@@ -63,3 +63,27 @@ class TestLevel(unittest.TestCase):
 
     def test_crit(self):
         self.assertEqual(fmt.level(95), "crit")
+
+
+class TestInitial(unittest.TestCase):
+    def test_first_letter_upper(self):
+        self.assertEqual(fmt.initial("Pessoal"), "P")
+        self.assertEqual(fmt.initial("edge"), "E")
+
+    def test_empty(self):
+        self.assertEqual(fmt.initial(""), "?")
+
+
+class TestFormatBar(unittest.TestCase):
+    def test_three_accounts(self):
+        items = [("Pessoal", 4, 4), ("Edge", 48, 11), ("Sulivam", 12, 20)]
+        self.assertEqual(fmt.format_bar(items), "P 4/4  E 48/11  S 12/20")
+
+    def test_none_values(self):
+        self.assertEqual(fmt.format_bar([("Edge", None, None)]), "E -/-")
+
+    def test_single_account(self):
+        self.assertEqual(fmt.format_bar([("Pessoal", 16, 18)]), "P 16/18")
+
+    def test_rounds(self):
+        self.assertEqual(fmt.format_bar([("Pessoal", 4.6, 3.2)]), "P 5/3")

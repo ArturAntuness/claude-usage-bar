@@ -49,3 +49,21 @@ def level(pct: float) -> str:
     if pct >= 80:
         return "warn"
     return "ok"
+
+
+def initial(label: str) -> str:
+    """Primeira letra maiúscula do rótulo da conta; '?' se vazio."""
+    return label[:1].upper() if label else "?"
+
+
+def format_bar(items) -> str:
+    """Texto compacto da barra p/ N contas. items: list[(label, pct5|None, pct7|None)].
+
+    Ex.: [("Pessoal",4,4),("Edge",48,11)] -> "P 4/4  E 48/11". None -> "-".
+    """
+    parts = []
+    for label, p5, p7 in items:
+        a = "%.0f" % p5 if p5 is not None else "-"
+        b = "%.0f" % p7 if p7 is not None else "-"
+        parts.append(f"{initial(label)} {a}/{b}")
+    return "  ".join(parts)
