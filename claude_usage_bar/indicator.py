@@ -1,4 +1,4 @@
-"""AppIndicator (bandeja) + menu + timer. Camada GTK; orquestra model/icon."""
+"""AppIndicator (bandeja) + menu + timer. Camada GTK; orquestra contas/model/icon."""
 from __future__ import annotations
 
 import os
@@ -13,17 +13,18 @@ gi.require_version("AyatanaAppIndicator3", "0.1")
 from gi.repository import Gtk, GLib, AyatanaAppIndicator3 as AppIndicator  # noqa: E402
 
 from . import icon  # noqa: E402
-from .format import bar_unicode, reset_text, level  # noqa: E402
-from .model import UsageModel  # noqa: E402
+from .accounts import discover  # noqa: E402
+from .format import bar_unicode, reset_text, level, format_bar  # noqa: E402
+from .model import MultiModel  # noqa: E402
 
 APP_ID = "claude-usage-bar"
 REFRESH_S = 300
-LABEL_GUIDE = "5h 99%  7d 99%"  # reserva de largura p/ o texto da barra
+LABEL_GUIDE = "P 99/99  E 99/99  S 99/99"  # reserva de largura p/ ~3 contas
 
 
 class TrayApp:
     def __init__(self) -> None:
-        self.model = UsageModel()
+        self.model = MultiModel(accounts=discover())
         self._icon_dir = tempfile.mkdtemp(prefix="claude-usage-bar-")
         self._icon_counter = 0
 
@@ -48,10 +49,12 @@ class TrayApp:
         self.indicator.set_icon_full(name, "Claude usage")
 
     def _worst(self):
-        u = self.model.usage
-        if not u:
-            return None
-        return max(u.five_hour_pct, u.seven_day_pct)
+        """Pior caso (maior %) entre todas as contas com dados; None se nenhuma."""
+        pcts = [
+            max(r.usage.five_hour_pct, r.usage.seven_day_pct)
+            for r in self.model.results if r.usage
+        ]
+        return max(pcts) if pcts else None
 
     def _update_icon(self) -> None:
         worst = self._worst()
@@ -61,13 +64,20 @@ class TrayApp:
             self._set_icon(worst, level(worst))
 
     def _label_text(self) -> str:
-        """Texto fixo na barra: as duas janelas, ou estado de erro/carregando."""
-        u = self.model.usage
-        if u:
-            return f"5h {u.five_hour_pct:.0f}%  7d {u.seven_day_pct:.0f}%"
-        if self.model.error:
-            return "⚠"
-        return "…"
+        """Texto fixo na barra: 'P 4/4  E 48/11  S 12/20'."""
+        if not self.model.accounts:
+            return "sem contas"
+        if not self.model.results:
+            return "…"
+        items = [
+            (
+                r.account.label,
+                r.usage.five_hour_pct if r.usage else None,
+                r.usage.seven_day_pct if r.usage else None,
+            )
+            for r in self.model.results
+        ]
+        return format_bar(items)
 
     # ---- menu ----
     def _build_menu(self) -> Gtk.Menu:
@@ -76,24 +86,34 @@ class TrayApp:
         header = Gtk.MenuItem(label="Uso do plano")
         header.set_sensitive(False)
         menu.append(header)
-        menu.append(Gtk.SeparatorMenuItem())
 
-        u = self.model.usage
-        if u:
-            rows = [
-                ("5h", u.five_hour_pct, u.five_hour_reset_epoch),
-                ("7d", u.seven_day_pct, u.seven_day_reset_epoch),
-            ]
-            for lbl, pct, epoch in rows:
-                txt = f"  {lbl}  ▕{bar_unicode(pct)}▏  {pct:.0f}%   {reset_text(epoch)}"
-                item = Gtk.MenuItem(label=txt.rstrip())
-                item.set_sensitive(False)
-                menu.append(item)
-        if self.model.error:
-            err = Gtk.MenuItem(label=f"  ⚠ {self.model.error}")
-            err.set_sensitive(False)
-            menu.append(err)
-        if not u and not self.model.error:
+        if not self.model.accounts:
+            none_item = Gtk.MenuItem(label="  nenhuma conta Claude encontrada")
+            none_item.set_sensitive(False)
+            menu.append(none_item)
+
+        for r in self.model.results:
+            menu.append(Gtk.SeparatorMenuItem())
+            section = Gtk.MenuItem(label=r.account.label.upper())
+            section.set_sensitive(False)
+            menu.append(section)
+
+            if r.usage:
+                rows = [
+                    ("5h", r.usage.five_hour_pct, r.usage.five_hour_reset_epoch),
+                    ("7d", r.usage.seven_day_pct, r.usage.seven_day_reset_epoch),
+                ]
+                for lbl, pct, epoch in rows:
+                    txt = f"  {lbl}  ▕{bar_unicode(pct)}▏  {pct:.0f}%   {reset_text(epoch)}"
+                    item = Gtk.MenuItem(label=txt.rstrip())
+                    item.set_sensitive(False)
+                    menu.append(item)
+            else:
+                err = Gtk.MenuItem(label=f"  ⚠ {r.error or 'sem dados'}")
+                err.set_sensitive(False)
+                menu.append(err)
+
+        if self.model.accounts and not self.model.results:
             loading = Gtk.MenuItem(label="  carregando…")
             loading.set_sensitive(False)
             menu.append(loading)
