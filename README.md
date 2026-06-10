@@ -1,11 +1,15 @@
 # Claude Usage Bar
 
-Indicador de bandeja (system tray) para **Ubuntu/GNOME** que mostra o uso do seu
-plano **Claude Code** em tempo real: janelas de **5h** e **7d** com countdown de
-reset. Reusa o token que o Claude CLI já guarda — sem dashboard, sem login extra.
+Indicador de bandeja (system tray) para **Ubuntu/GNOME** que mostra o uso dos seus
+planos **Claude Code** em tempo real — **uma ou várias contas ao mesmo tempo** — com
+janelas de **5h** e **7d** e countdown de reset. Reusa os tokens que o Claude CLI já
+guarda, sem dashboard nem login extra.
 
-- Texto fixo na barra (`5h X%  7d Y%`) + anel medidor que muda de cor: verde <80%, laranja ≥80%, vermelho ≥95%.
-- Clique abre o menu com o detalhe: barras, % e horário de reset de cada janela.
+- **Multi-conta:** descobre automaticamente `~/.claude` e `~/.claude-*`. A barra
+  mostra todas numa linha (`P 4/4  E 48/11  S 12/20`) e o menu tem uma **seção por conta**.
+- **Anel medidor** que muda de cor pelo pior caso: verde <80%, laranja ≥80%, vermelho ≥95%.
+- **Notificações** do GNOME quando uma conta cruza 80% / 95% (5h ou 7d).
+- **Menu vivo:** abre e fica aberto, atualizando os valores e o countdown sem fechar.
 - Atualiza a cada 5 minutos.
 
 ## Requisitos
@@ -37,9 +41,10 @@ Iniciar junto com o login:
 
 | Item | Detalhe |
 |---|---|
-| Token | lido (read-only) de `~/.claude/.credentials.json` → `claudeAiOauth.accessToken` |
+| Contas | descobertas em `~/.claude` e `~/.claude-*` (que tenham `.credentials.json`); rótulo derivado do nome da pasta (`.claude`→Pessoal, `.claude-edge`→Edge…) |
+| Token | lido (read-only) de cada `<conta>/.credentials.json` → `claudeAiOauth.accessToken` |
 | Probe | `POST api.anthropic.com/v1/messages` (`max_tokens:1`) → lê headers `anthropic-ratelimit-unified-{5h,7d}-{utilization,reset}` |
-| Custo | mínimo (1 request minúsculo a cada 5 min) |
+| Custo | mínimo (1 request por conta a cada 5 min) |
 
 O access token do Claude vive ~8h; quem o renova é o **Claude CLI**. Este app só
 lê. Se ficar muito tempo sem usar o Claude Code, o ícone mostra `token expirado`
@@ -54,10 +59,13 @@ lê. Se ficar muito tempo sem usar o Claude Code, o ícone mostra `token expirad
    `anthropic-ratelimit-unified-*`.
 3. A Anthropic calcula o uso no servidor; o app só **lê** os números e redesenha
    o ícone + o texto da barra + o menu.
-4. "Atualizar agora" no menu força uma atualização fora do ciclo.
+4. **Menu vivo:** ao abrir, o menu dispara um refresh e atualiza os valores e o
+   countdown **no lugar**, sem fechar (os itens são atualizados, não recriados).
+5. **Notificações:** a cada ciclo, se uma conta cruzou 80% ou 95% (5h/7d) **na
+   subida**, dispara uma notificação do GNOME (não repete; rearma no reset).
 
-> Os percentuais e o countdown de reset refletem o último ciclo (≤5 min atrás),
-> não são ao vivo segundo-a-segundo.
+> Os percentuais refletem o último ciclo (≤5 min atrás). O countdown de reset
+> "anda" enquanto o menu está aberto.
 
 ## Consumo de recursos
 
@@ -93,7 +101,7 @@ cota da Anthropic por ciclo é uma fração ínfima.
   só os headers de rate-limit). Sem `pickle`/`eval`.
 - **Sem privilégio em runtime.** Roda como seu usuário, sem `sudo`. Apenas o
   `install.sh` usa `sudo`, e só para o `apt`.
-- **Auditável.** São ~250 linhas em `claude_usage_bar/` — leia você mesmo.
+- **Auditável.** São ~350 linhas em `claude_usage_bar/` — leia você mesmo.
 
 > O token já vive no disco (no arquivo do Claude CLI, só legível por você). Este
 > app não amplia essa exposição: quem já tem acesso ao seu usuário consegue ler o
