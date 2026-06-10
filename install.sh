@@ -15,6 +15,7 @@ echo "==> copiando para ${DEST}"
 mkdir -p "${DEST}"
 rm -rf "${DEST}/claude_usage_bar"
 cp -r claude_usage_bar main.py "${DEST}/"
+find "${DEST}" -type d -name __pycache__ -exec rm -rf {} +   # não distribui bytecode
 
 echo "==> launcher .desktop"
 APPS="${HOME}/.local/share/applications"
