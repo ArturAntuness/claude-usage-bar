@@ -7,6 +7,7 @@ guarda, sem dashboard nem login extra.
 
 - **Multi-conta:** descobre automaticamente `~/.claude` e `~/.claude-*`. A barra
   mostra todas numa linha (`P 4/4  E 48/11  S 12/20`) e o menu tem uma **seção por conta**.
+  Com **uma conta só**, mostra limpo: `5h 16%  7d 18%` (sem prefixo nem seção).
 - **Anel medidor** que muda de cor pelo pior caso: verde <80%, laranja ≥80%, vermelho ≥95%.
 - **Notificações** do GNOME quando uma conta cruza 80% / 95% (5h ou 7d).
 - **Menu vivo:** abre e fica aberto, atualizando os valores e o countdown sem fechar.

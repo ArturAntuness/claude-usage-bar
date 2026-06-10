@@ -87,3 +87,14 @@ class TestFormatBar(unittest.TestCase):
 
     def test_rounds(self):
         self.assertEqual(fmt.format_bar([("Pessoal", 4.6, 3.2)]), "P 5/3")
+
+
+class TestBarSingle(unittest.TestCase):
+    def test_values(self):
+        self.assertEqual(fmt.bar_single(16, 18), "5h 16%  7d 18%")
+
+    def test_rounds(self):
+        self.assertEqual(fmt.bar_single(4.6, 3.2), "5h 5%  7d 3%")
+
+    def test_none(self):
+        self.assertEqual(fmt.bar_single(None, None), "5h -  7d -")

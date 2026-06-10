@@ -15,7 +15,7 @@ from gi.repository import Gtk, GLib, AyatanaAppIndicator3 as AppIndicator  # noq
 from . import icon  # noqa: E402
 from . import notifications  # noqa: E402
 from .accounts import discover  # noqa: E402
-from .format import bar_unicode, reset_text, level, format_bar  # noqa: E402
+from .format import bar_unicode, reset_text, level, format_bar, bar_single  # noqa: E402
 from .model import MultiModel  # noqa: E402
 
 APP_ID = "claude-usage-bar"
@@ -73,6 +73,9 @@ class TrayApp:
             return "sem contas"
         if not self.model.results:
             return "…"
+        if len(self.model.results) == 1:
+            r = self.model.results[0]
+            return bar_single(r.usage.five_hour_pct, r.usage.seven_day_pct) if r.usage else "⚠"
         items = [
             (
                 r.account.label,
@@ -102,9 +105,11 @@ class TrayApp:
         if not self.model.accounts:
             menu.append(self._disabled("  nenhuma conta Claude encontrada"))
 
+        single = len(self.model.accounts) == 1
         for a in self.model.accounts:
             menu.append(Gtk.SeparatorMenuItem())
-            menu.append(self._disabled(a.label.upper()))
+            if not single:
+                menu.append(self._disabled(a.label.upper()))
             r5 = self._disabled("  5h  …")
             r7 = self._disabled("  7d  …")
             menu.append(r5)

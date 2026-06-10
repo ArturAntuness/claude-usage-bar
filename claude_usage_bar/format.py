@@ -67,3 +67,10 @@ def format_bar(items) -> str:
         b = "%.0f" % p7 if p7 is not None else "-"
         parts.append(f"{initial(label)} {a}/{b}")
     return "  ".join(parts)
+
+
+def bar_single(pct5, pct7) -> str:
+    """Barra limpa p/ 1 conta só: '5h 16%  7d 18%'. None -> '-'."""
+    a = f"{pct5:.0f}%" if pct5 is not None else "-"
+    b = f"{pct7:.0f}%" if pct7 is not None else "-"
+    return f"5h {a}  7d {b}"
