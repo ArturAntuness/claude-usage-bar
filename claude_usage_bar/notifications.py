@@ -30,6 +30,8 @@ def notifications_to_fire(prev, curr, thresholds=DEFAULT_THRESHOLDS):
             ("7d", p.usage.seven_day_pct, r.usage.seven_day_pct),
         ]
         for win, pv, cv in windows:
+            if pv is None or cv is None:
+                continue  # janela inexistente no provider (ex.: Codex sem 5h)
             crossed = crossings(pv, cv, thresholds)
             if crossed:
                 suffix = " — quase no limite" if max(crossed) >= 95 else ""

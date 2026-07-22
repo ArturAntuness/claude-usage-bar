@@ -62,3 +62,34 @@ class TestNotificationsToFire(unittest.TestCase):
         msgs = notif.notifications_to_fire(prev, curr)
         self.assertEqual(len(msgs), 1)
         self.assertIn("Pessoal", msgs[0])
+
+
+def codex_au(label, seven):
+    """Conta do Codex: sem janela de 5h."""
+    return AccountUsage(
+        Account(label, f"/{label}", provider="codex"), Usage(None, seven, None, None), None
+    )
+
+
+class TestMissingWindow(unittest.TestCase):
+    def test_absent_five_hour_does_not_crash(self):
+        msgs = notif.notifications_to_fire([codex_au("Pessoal", 10)], [codex_au("Pessoal", 20)])
+        self.assertEqual(msgs, [])
+
+    def test_seven_day_still_notifies_without_five_hour(self):
+        msgs = notif.notifications_to_fire([codex_au("Pessoal", 70)], [codex_au("Pessoal", 82)])
+        self.assertEqual(len(msgs), 1)
+        self.assertIn("7d", msgs[0])
+        self.assertIn("Pessoal", msgs[0])
+
+    def test_absent_window_never_reported_as_crossing(self):
+        msgs = notif.notifications_to_fire([codex_au("Pessoal", 96)], [codex_au("Pessoal", 97)])
+        self.assertEqual(msgs, [])
+
+    def test_mixed_providers(self):
+        prev = [codex_au("Pessoal", 70), au("Edge", 70, 10)]
+        curr = [codex_au("Pessoal", 85), au("Edge", 90, 10)]
+        msgs = notif.notifications_to_fire(prev, curr)
+        self.assertEqual(len(msgs), 2)
+        self.assertIn("Pessoal 7d", msgs[0])
+        self.assertIn("Edge 5h", msgs[1])

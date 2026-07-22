@@ -14,7 +14,7 @@ from gi.repository import Gtk, GLib, AyatanaAppIndicator3 as AppIndicator  # noq
 
 from . import icon  # noqa: E402
 from . import notifications  # noqa: E402
-from .accounts import discover  # noqa: E402
+from .accounts import discover, CODEX  # noqa: E402
 from .format import bar_unicode, reset_text, level, format_bar, bar_single  # noqa: E402
 from .model import MultiModel  # noqa: E402
 
@@ -55,10 +55,13 @@ class TrayApp:
         self.indicator.set_icon_full(name, "Claude usage")
 
     def _worst(self):
-        pcts = [
-            max(r.usage.five_hour_pct, r.usage.seven_day_pct)
-            for r in self.model.results if r.usage
-        ]
+        pcts = []
+        for r in self.model.results:
+            if not r.usage:
+                continue
+            windows = [p for p in (r.usage.five_hour_pct, r.usage.seven_day_pct) if p is not None]
+            if windows:
+                pcts.append(max(windows))
         return max(pcts) if pcts else None
 
     def _update_icon(self) -> None:
@@ -109,9 +112,14 @@ class TrayApp:
         for a in self.model.accounts:
             menu.append(Gtk.SeparatorMenuItem())
             if not single:
-                menu.append(self._disabled(a.label.upper()))
+                menu.append(self._disabled(self._heading(a)))
             r5 = self._disabled("  5h  …")
             r7 = self._disabled("  7d  …")
+            # a visibilidade passa a seguir o que o provider devolve (o Codex pode
+            # não ter janela de 5h); set_no_show_all impede o show_all de reexibir
+            for item in (r5, r7):
+                item.set_no_show_all(True)
+                item.set_visible(True)
             menu.append(r5)
             menu.append(r7)
             self._rows[a.label] = {"r5": r5, "r7": r7}
@@ -129,8 +137,23 @@ class TrayApp:
         self._menu = menu
         return menu
 
+    @staticmethod
+    def _heading(account) -> str:
+        """Deixa explícito qual serviço alimenta a conta quando não é o Claude."""
+        if account.provider == CODEX:
+            return f"{account.label.upper()} (Codex)"
+        return account.label.upper()
+
     def _row_text(self, lbl, pct, epoch) -> str:
         return f"  {lbl}  ▕{bar_unicode(pct)}▏  {pct:.0f}%   {reset_text(epoch)}".rstrip()
+
+    def _window_row(self, item, lbl, pct, epoch) -> None:
+        """Preenche a linha da janela; esconde se o provider não expõe essa janela."""
+        if pct is None:
+            item.set_visible(False)
+            return
+        self._set(item, self._row_text(lbl, pct, epoch))
+        item.set_visible(True)
 
     def _render(self) -> None:
         by = {r.account.label: r for r in self.model.results}
@@ -139,11 +162,13 @@ class TrayApp:
             if r is None:
                 continue
             if r.usage:
-                self._set(row["r5"], self._row_text("5h", r.usage.five_hour_pct, r.usage.five_hour_reset_epoch))
-                self._set(row["r7"], self._row_text("7d", r.usage.seven_day_pct, r.usage.seven_day_reset_epoch))
+                self._window_row(row["r5"], "5h", r.usage.five_hour_pct, r.usage.five_hour_reset_epoch)
+                self._window_row(row["r7"], "7d", r.usage.seven_day_pct, r.usage.seven_day_reset_epoch)
             else:
+                # erro ocupa a primeira linha; a segunda sai de cena
                 self._set(row["r5"], f"  ⚠ {r.error or 'sem dados'}")
-                self._set(row["r7"], "")
+                row["r5"].set_visible(True)
+                row["r7"].set_visible(False)
         if self.model.last_updated:
             self._set(self._updated_item, time.strftime("atualizado %H:%M:%S", time.localtime(self.model.last_updated)))
 

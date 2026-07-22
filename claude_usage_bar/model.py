@@ -7,9 +7,10 @@ from typing import Callable
 
 from . import credentials as cred
 from . import claude_probe as probe
-from .accounts import Account
-from .claude_probe import Usage, ProbeError
+from . import codex_probe
+from .accounts import Account, CODEX
 from .credentials import Credentials, CredentialsError
+from .usage import Usage, ProbeError
 
 
 @dataclass
@@ -24,8 +25,16 @@ def refresh_account(
     read: Callable[[str], Credentials] = cred.read,
     prober: Callable[[Credentials], Usage] = probe.fetch,
     now: Callable[[], float] = time.time,
+    codex_prober: Callable[[], Usage] = codex_probe.fetch,
 ) -> AccountUsage:
     """Lê a credencial da conta, faz o probe, devolve o resultado. Nunca levanta."""
+    if account.provider == CODEX:
+        # O app-server do Codex cuida do token sozinho — não há credencial a validar.
+        try:
+            return AccountUsage(account, codex_prober(), None)
+        except ProbeError as e:
+            return AccountUsage(account, None, e.message)
+
     try:
         c = read(account.credentials_path)
     except CredentialsError as e:
@@ -52,6 +61,7 @@ class MultiModel:
         read: Callable[[str], Credentials] = cred.read,
         prober: Callable[[Credentials], Usage] = probe.fetch,
         now: Callable[[], float] = time.time,
+        codex_prober: Callable[[], Usage] = codex_probe.fetch,
     ) -> None:
-        self.results = [refresh_account(a, read, prober, now) for a in self.accounts]
+        self.results = [refresh_account(a, read, prober, now, codex_prober) for a in self.accounts]
         self.last_updated = now()

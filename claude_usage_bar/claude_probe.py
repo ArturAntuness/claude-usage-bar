@@ -4,11 +4,11 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
 from typing import Mapping
 
 from .credentials import Credentials
 from .format import parse_percent
+from .usage import Usage, ProbeError  # re-exportados: importar daqui segue válido
 
 ENDPOINT = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
@@ -21,21 +21,6 @@ H5_UTIL = "anthropic-ratelimit-unified-5h-utilization"
 H5_RESET = "anthropic-ratelimit-unified-5h-reset"
 H7_UTIL = "anthropic-ratelimit-unified-7d-utilization"
 H7_RESET = "anthropic-ratelimit-unified-7d-reset"
-
-
-@dataclass
-class Usage:
-    five_hour_pct: float
-    seven_day_pct: float
-    five_hour_reset_epoch: float | None
-    seven_day_reset_epoch: float | None
-
-
-class ProbeError(Exception):
-    def __init__(self, kind: str, message: str):
-        super().__init__(message)
-        self.kind = kind
-        self.message = message
 
 
 def _lower_headers(headers: Mapping[str, str]) -> dict[str, str]:
